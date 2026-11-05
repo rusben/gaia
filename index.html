@@ -14,7 +14,7 @@ html,body{height:100%;overflow:hidden;background:#04060c;color:var(--t);font:13p
 .r{display:flex;gap:6px;align-items:center;padding:3px 5px;border-radius:7px;cursor:pointer}
 .r:hover{background:rgba(255,255,255,.07)}.r.on{background:rgba(110,231,183,.18)}
 .r span{flex:1}.r b{min-width:30px;text-align:right}.r em{color:var(--m);font-size:11px;font-style:normal;min-width:44px;text-align:right}
-#ch{width:100%;height:56px;margin-top:6px;border-top:1px solid var(--b);padding-top:4px}
+#ch{width:100%;height:72px;margin-top:6px;border-top:1px solid var(--b);padding-top:4px;cursor:crosshair}#bl{display:flex;flex-wrap:wrap;gap:2px 8px;margin-top:6px;font-size:10px;color:var(--m)}#bl i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px}#tip{position:fixed;display:none;pointer-events:none;z-index:5;background:rgba(12,18,32,.92);border:1px solid var(--b);border-radius:9px;padding:6px 9px;font-size:11px;line-height:1.5}
 #tools{right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;width:78px}
 .tb{background:rgba(255,255,255,.06);border:1px solid transparent;color:var(--t);border-radius:10px;padding:5px 2px;cursor:pointer;font:inherit;display:flex;flex-direction:column;align-items:center}
 .tb b{font-size:20px;font-weight:400}.tb i{font-style:normal;font-size:10px;color:var(--m)}
@@ -30,12 +30,12 @@ html,body{height:100%;overflow:hidden;background:#04060c;color:var(--t);font:13p
 @media(max-width:700px){#info{width:176px}#ch,#hint,#bar .pr{display:none}#tools{width:64px}.r em{display:none}}
 </style></head><body>
 <canvas id="c"></canvas><div id="load">🌍 Generando el mundo…</div>
-<div id="info" class="p"><h1>🌍 Gaia<small>simulador de vida</small></h1><div id="clock"></div><div id="env"></div><div id="sp"></div><canvas id="ch" width="226" height="56"></canvas></div>
+<div id="info" class="p"><h1>🌍 Gaia<small>simulador de vida</small></h1><div id="clock"></div><div id="env"></div><div id="sp"></div><canvas id="ch" width="226" height="72" title="Pasa el ratón para ver cada especie"></canvas><div id="bl"></div></div>
 <div id="tools" class="p"></div>
 <div id="bar" class="p"><button id="pp" title="Pausa (Espacio)">⏸</button><input id="sl" type="range" min="0" max="100" value="40"><span id="sv"></span>
 <button class="pr" data-x="1">×1</button><button class="pr" data-x="8">×8</button><button class="pr" data-x="40">×40</button><button id="vw">🛰 Sistema</button></div>
 <div id="hint">Arrastra: girar · Rueda/pellizco: zoom · Clic: usar poder · Espacio: pausa · 1-7: poderes</div>
-<div id="toast"></div>
+<div id="tip"></div><div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 setTimeout(()=>{try{main()}catch(e){document.getElementById('load').textContent='Error: '+e.message;console.error(e)}},40);
@@ -76,7 +76,7 @@ const sea=Float32Array.from(Hv).sort()[Math.floor(Hv.length*.63)];
 const rad=hv=>hv>0?1+hv*.35:1+hv*.08;
 for(let i=0;i<NV;i++){const id=vid[i],hv=Hv[id]-sea,r=rad(hv);pos.setXYZ(i,pos.getX(i)*r,pos.getY(i)*r,pos.getZ(i)*r)}
 let m=new Float32Array(NC),m2=new Float32Array(NC),w=new Float32Array(NC),w2=new Float32Array(NC);const h=new Float32Array(NC),T=new Float32Array(NC).fill(.5),p=new Float32Array(NC),lat=new Float32Array(NC),cr=new Float32Array(NC),isL=new Uint8Array(NC),dn=new Int32Array(NC),wn=new Int32Array(NC);
-let cl=new Float32Array(NC),cl2=new Float32Array(NC);
+let cl=new Float32Array(NC),cl2=new Float32Array(NC);const rv=new Float32Array(NC);
 const cn=[],cp=[],cq=[],Y=new THREE.Vector3(0,1,0);
 for(let c=0;c<NC;c++){let x=0,y=0,z=0,s=0;for(let j=0;j<3;j++){const i=c*3+j;x+=pos.getX(i)/3;y+=pos.getY(i)/3;z+=pos.getZ(i)/3;s+=(Hv[vid[i]]-sea)/3}
 h[c]=s;isL[c]=s>0?1:0;const v=new THREE.Vector3(x,y,z);cp.push(v);cr[c]=v.length();cn.push(v.clone().normalize());lat[c]=Math.asin(cn[c].y);cq.push(new THREE.Quaternion().setFromUnitVectors(Y,cn[c]));m[c]=isL[c]?.2:1;cl[c]=R()*.4;p[c]=isL[c]?.25*R():.3}
@@ -86,20 +86,36 @@ geo.computeVertexNormals();geo.computeBoundingSphere();
 const col=new Float32Array(NV*3);geo.setAttribute('color',new THREE.BufferAttribute(col,3));
 const terrain=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true}));spin.add(terrain);
 spin.add(new THREE.Mesh(new THREE.SphereGeometry(1,64,48),new THREE.MeshPhongMaterial({color:0x1d5fa8,transparent:true,opacity:.6,shininess:90,specular:0x99bbff,depthWrite:false})));
-function paint(c){let r,g,b;const t=T[c],hn=Math.max(0,h[c]*4.5),mm=Math.min(1,m[c]);
-if(isL[c]){if(w[c]>.08){r=.2;g=.45;b=.85}else if(t<.26||(hn>.5&&t<.45)){r=.94;g=.96;b=1}else if(hn<.04){r=.8;g=.74;b=.5}
-else{r=.62-.3*mm;g=.55-.04*mm;b=.33-.08*mm;const pp=Math.min(1,p[c]*1.4)*.8;r+=(.1-r)*pp;g+=(.36-g)*pp;b+=(.13-b)*pp;if(hn>.55){const k=Math.min(1,(hn-.55)*4);r+=(.5-r)*k;g+=(.48-g)*k;b+=(.46-b)*k}}}
+const BIO=[
+{n:'Playa',g:[.8,.74,.5],t:[.6,.6,.3],pm:.2,hf:.5,gr:.3},{n:'Nieve',g:[.94,.96,1],t:[.7,.8,.8],pm:0,hf:.5,gr:0},
+{n:'Montaña',g:[.5,.48,.46],t:[.3,.4,.3],pm:.3,hf:.6,gr:.3},{n:'Tundra',g:[.62,.66,.58],t:[.5,.6,.45],pm:.45,hf:.45,gr:.5},
+{n:'Taiga',g:[.2,.34,.3],t:[.1,.28,.22],pm:1,hf:1.2,gr:.7},{n:'Estepa',g:[.72,.66,.4],t:[.65,.6,.3],pm:.55,hf:.5,gr:.6},
+{n:'Pradera',g:[.42,.62,.28],t:[.3,.55,.2],pm:.8,hf:.6,gr:1},{n:'Bosque',g:[.2,.45,.18],t:[.1,.38,.12],pm:1,hf:1,gr:1},
+{n:'Desierto',g:[.86,.72,.45],t:[.55,.6,.25],pm:.3,hf:.45,gr:.3},{n:'Sabana',g:[.74,.64,.3],t:[.6,.55,.2],pm:.65,hf:.7,gr:.8},
+{n:'Selva',g:[.05,.4,.1],t:[.03,.32,.08],pm:1,hf:1.4,gr:1.3},{n:'Humedal',g:[.2,.42,.3],t:[.1,.4,.25],pm:.9,hf:.7,gr:1.1}];
+function bio(c){const t=T[c],mm=Math.min(1,m[c]),hn=Math.max(0,h[c]*4.5);
+if(t<.26||(hn>.5&&t<.45))return 1;if(hn<.04)return 0;if(hn>.55)return 2;if(mm>.85&&hn<.12&&t>.4)return 11;
+if(t<.38)return mm<.3?3:4;if(t<.62)return mm<.3?5:mm<.6?6:7;return mm<.2?8:mm<.45?9:10}
+function paint(c){let r,g,b;const t=T[c];
+if(isL[c]){if(dn[c]<0&&w[c]>.1){r=.2;g=.45;b=.85}else{const B=BIO[bio(c)],pp=Math.min(1,p[c]*1.4)*.8;r=B.g[0]+(B.t[0]-B.g[0])*pp;g=B.g[1]+(B.t[1]-B.g[1])*pp;b=B.g[2]+(B.t[2]-B.g[2])*pp}}
 else if(t<.14){r=.85;g=.92;b=.98}else{const k=Math.min(1,-h[c]*5);r=.16-.1*k;g=.34-.2*k+p[c]*.15;b=.5-.25*k+p[c]*.05}
 for(let j=0;j<3;j++){const i=(c*3+j)*3;col[i]=r;col[i+1]=g;col[i+2]=b}}
 // ---------- plantas (instancias) ----------
 const dum=new THREE.Object3D(),tc=new THREE.Color();
 const cg=new THREE.ConeGeometry(.5,1,5);cg.translate(0,.5,0);
 const trees=new THREE.InstancedMesh(cg,new THREE.MeshLambertMaterial(),NC*2);trees.frustumCulled=false;spin.add(trees);
-function updTrees(){const pa=pos.array;for(let c=0;c<NC;c++){for(let j=0;j<2;j++){const i=c*2+j,pp=p[c];
+function updTrees(){const pa=pos.array;for(let c=0;c<NC;c++){const B=BIO[isL[c]?bio(c):0];for(let j=0;j<2;j++){const i=c*2+j,pp=p[c];
 if(!isL[c]||pp<(j?.45:.12)||T[c]<.22){dum.scale.set(0,0,0);dum.position.copy(cp[c])}
-else{const o=(c*3+j)*3,cc=cp[c];dum.position.set(cc.x+(pa[o]-cc.x)*.35,cc.y+(pa[o+1]-cc.y)*.35,cc.z+(pa[o+2]-cc.z)*.35);dum.quaternion.copy(cq[c]);dum.scale.set(.007+.011*pp,(.012+.03*pp)*(j?.85:1),.007+.011*pp)}
-dum.updateMatrix();trees.setMatrixAt(i,dum.matrix);const mm=Math.min(1,m[c]),k=1+((c%7)-3)*.03;let r=.5+(.07-.5)*mm,g=.5+(.34-.5)*mm,b=.18+(.1-.18)*mm;if(T[c]<.45){const q=cl01((.45-T[c])*4,0,1);r+=(.14-r)*q;g+=(.32-g)*q;b+=(.27-b)*q}
+else{const o=(c*3+j)*3,cc=cp[c];dum.position.set(cc.x+(pa[o]-cc.x)*.35,cc.y+(pa[o+1]-cc.y)*.35,cc.z+(pa[o+2]-cc.z)*.35);dum.quaternion.copy(cq[c]);dum.scale.set(.007+.011*pp,(.012+.03*pp)*B.hf*(j?.85:1),.007+.011*pp)}
+dum.updateMatrix();trees.setMatrixAt(i,dum.matrix);const k=1+((c%7)-3)*.03;let r=B.t[0],g=B.t[1],b=B.t[2];
 trees.setColorAt(i,tc.setRGB(r*k,g*k,b*k))}}trees.instanceMatrix.needsUpdate=true;trees.instanceColor.needsUpdate=true}
+const rivers=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshPhongMaterial({color:0x3a8cf0,emissive:0x0d3068,shininess:90}),NC);rivers.frustumCulled=false;spin.add(rivers);
+function updRivers(){const A=rivers.instanceMatrix.array;for(let c=0;c<NC;c++){const o=c*16,d=dn[c];A.fill(0,o,o+16);if(!isL[c]||d<0||rv[c]<.02)continue;
+const a=cp[c],b=cp[d];let fx=b.x-a.x,fy=b.y-a.y,fz=b.z-a.z;const len=Math.hypot(fx,fy,fz),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,mz=(a.z+b.z)/2,ml=Math.hypot(mx,my,mz),ux=mx/ml,uy=my/ml,uz=mz/ml,rr=Math.max(ml,1)+.005;
+fx/=len;fy/=len;fz/=len;const dd=fx*ux+fy*uy+fz*uz;fx-=dd*ux;fy-=dd*uy;fz-=dd*uz;const fl=Math.hypot(fx,fy,fz)||1;fx/=fl;fy/=fl;fz/=fl;
+const rx=uy*fz-uz*fy,ry=uz*fx-ux*fz,rz=ux*fy-uy*fx,wd=.006+.014*Math.min(1,rv[c]*1.5),lz=len*1.2;
+A[o]=rx*wd;A[o+1]=ry*wd;A[o+2]=rz*wd;A[o+4]=ux*.005;A[o+5]=uy*.005;A[o+6]=uz*.005;A[o+8]=fx*lz;A[o+9]=fy*lz;A[o+10]=fz*lz;A[o+12]=ux*rr;A[o+13]=uy*rr;A[o+14]=uz*rr;A[o+15]=1}
+rivers.instanceMatrix.needsUpdate=true}
 // ---------- nubes, lluvia, rayos ----------
 const NP=1100,pd=[],pc=new Int32Array(NP),prj=[];
 function loc(c,x,y,z,mx){let bd=cn[c].x*x+cn[c].y*y+cn[c].z*z;for(let k=0;k<mx;k++){let b=c;for(const q of nb[c]){const d=cn[q].x*x+cn[q].y*y+cn[q].z*z;if(d>bd){bd=d;b=q}}if(b===c)break;c=b}return c}
@@ -129,7 +145,7 @@ const SP=[
 {n:'Águila',e:'🦅',d:'air',f:[0,2],sz:.016,v:.6,c:0x6b4a2b,k:'#c9a56a',cap:30,life:40,m:.17,sh:[1.7,.2,.9],q:8},
 {n:'Pez',e:'🐟',d:'sea',f:'p',sz:.009,v:.22,c:0xffb347,k:'#ffc14d',cap:260,life:20,m:.25,sh:[.3,.5,1.1],q:110},
 {n:'Tiburón',e:'🦈',d:'sea',f:[5],sz:.02,v:.32,c:0x8fa4b8,k:'#66b8ff',cap:35,life:45,m:.18,sh:[.35,.45,1.5],q:10}];
-const pop=SP.map(()=>[]),preyOf=SP.map(s=>Array.isArray(s.f)?s.f:[]),predOf=SP.map((_,i)=>SP.map((_,j)=>j).filter(j=>preyOf[j].includes(i)));
+[900,500,250,150,100,900,120].forEach((v,i)=>SP[i].cap=v);const pop=SP.map(()=>[]),preyOf=SP.map(s=>Array.isArray(s.f)?s.f:[]),predOf=SP.map((_,i)=>SP.map((_,j)=>j).filter(j=>preyOf[j].includes(i)));
 const sg=new THREE.SphereGeometry(1,8,6),meshes=SP.map(S=>{const x=new THREE.InstancedMesh(sg,new THREE.MeshLambertMaterial({color:S.c}),S.cap+80);x.frustumCulled=false;x.count=0;spin.add(x);return x});
 const okc=(s,c)=>{const d=SP[s].d;return d=='air'||(d=='land'?isL[c]&&T[c]>.1:!isL[c])};
 function mk(s,c,g,e){const n=cn[c],a={s,c,x:n.x,y:n.y,z:n.z,hx:1,hy:0,hz:0,e:e||.8,age:R()*5,cool:R()*1.5,th:R()*TAU,g:g||{v:1,z:1},tg:null,gl:-1,fl:0,fx:0,fy:0,fz:0,dead:false};pop[s].push(a);return a}
@@ -169,13 +185,13 @@ for(let c=0;c<NC;c++){const Ld=isL[c];let v=cl[c];v+=Ld?dt*.08*T[c]*Math.min(m[c
 if(v>th){const r=(v-th)*Math.min(1,dt*1.6);v-=r;if(Ld){w[c]+=r*1.3;m[c]=Math.min(1.5,m[c]+r*1.6)}if(r>dt*.06)rainCells.push(c)}
 v=Math.min(2.2,v*(1-dt*.04));if(v>.95&&R()<dt*.5*(v-.9))sk.push(c);cl2[wn[c]]+=v*f;cl2[c]+=v*(1-f)}
 [cl,cl2]=[cl2,cl];for(const c of sk)strike(c);
-w2.fill(0);for(let c=0;c<NC;c++)if(isL[c]){let v=w[c];if(v>0){const d=dn[c];if(d>=0){const mv=v*Math.min(.85,dt*3);v-=mv;if(isL[d])w2[d]+=mv}else m[c]=Math.min(1.5,m[c]+v*dt*.4);v*=1-dt*.3;w2[c]+=v}}
+w2.fill(0);const kr=Math.min(1,dt*.7);for(let c=0;c<NC;c++)if(isL[c]){if(h[c]>.067&&T[c]>.3&&m[c]>.3)w[c]+=dt*.05*Math.min(1,m[c]);let v=w[c],fl=0;if(v>0){const d=dn[c];if(d>=0){const mv=v*Math.min(.85,dt*3);fl=mv/dt;v-=mv;if(isL[d])w2[d]+=mv}else m[c]=Math.min(1.5,m[c]+v*dt*.4);v*=1-dt*.3;w2[c]+=v}rv[c]+=(fl-rv[c])*kr}
 [w,w2]=[w2,w];
 for(let c=0;c<NC;c++){if(!isL[c]){m2[c]=1;continue}const q=nb[c];let s=0;for(let k=0;k<q.length;k++)s+=m[q[k]];let mm=m[c];mm+=Math.min(1,dt*.6)*(s/q.length-mm)-dt*.12*mm*(.4+T[c]);if(w[c]>.02)mm=Math.max(mm,.7);m2[c]=cl01(mm,0,1.5)}
 [m,m2]=[m2,m];
 for(let c=0;c<NC;c++){const t=T[c];let pv=p[c];
-if(isL[c]){const mm=Math.min(1,m[c]);if(t>.27&&t<.95&&mm>.15){let seed=pv>.04||R()<dt*.002;if(!seed){const q=nb[c];for(let k=0;k<q.length;k++)if(p[q[k]]>.3){seed=true;break}}
-if(seed){if(pv<.04)pv=.04;pv+=dt*.4*mm*(1-pv)*(1-Math.abs(t-.62)*1.2)}}else pv-=dt*.15;if(mm<.1)pv-=dt*.1}
+if(isL[c]){const mm=Math.min(1,m[c]),B=BIO[bio(c)];if(t>.27&&t<.95&&mm>.15){let seed=pv>.04||R()<dt*.002;if(!seed){const q=nb[c];for(let k=0;k<q.length;k++)if(p[q[k]]>.3){seed=true;break}}
+if(seed){if(pv<.04)pv=.04;pv+=dt*.4*mm*B.gr*(1-pv)*(1-Math.abs(t-.62)*1.2)}}else pv-=dt*.15;if(mm<.1)pv-=dt*.1;pv=Math.min(pv,B.pm)}
 else pv+=dt*.6*(1-pv)*Math.max(.05,t-.1);p[c]=cl01(pv,0,1)}
 for(let s=0;s<SP.length;s++){const l=pop[s],n=l.length;for(let i=0;i<n;i++){if(!l[i].dead)agent(l[i],dt,tk,i)}}
 for(let s=0;s<SP.length;s++)pop[s]=pop[s].filter(a=>!a.dead)}
@@ -197,8 +213,8 @@ TOOLS.forEach(([id,e,n],i)=>{const b=document.createElement('button');b.classNam
 tb.insertAdjacentHTML('beforeend','<label>Radio<input id="rad" type="range" min=".08" max=".5" step=".01" value=".22"></label>');
 $('rad').oninput=e=>brush=+e.target.value;
 function setTool(id){tool=id;TOOLS.forEach(t=>$('t_'+t[0]).classList.toggle('on',t[0]==id));renderRows()}
-$('sp').innerHTML=SP.map((s,i)=>`<div class="r" data-s="${i}"><span>${s.e} ${s.n}</span><b id="n${i}">0</b><em id="g${i}"></em></div>`).join('');
-function renderRows(){document.querySelectorAll('.r').forEach(r=>r.classList.toggle('on',tool=='spawn'&&+r.dataset.s==spSel))}
+$('sp').innerHTML=SP.map((s,i)=>`<div class="r" data-s="${i}"><span><i style="color:${s.k};font-style:normal">●</i> ${s.e} ${s.n}</span><b id="n${i}">0</b><em id="g${i}"></em></div>`).join('');
+$('bl').innerHTML=BIO.map(b=>`<span><i style="background:rgb(${b.g.map(v=>v*255|0)})"></i>${b.n}</span>`).join('');function renderRows(){document.querySelectorAll('.r').forEach(r=>r.classList.toggle('on',tool=='spawn'&&+r.dataset.s==spSel))}
 document.querySelectorAll('.r').forEach(r=>r.onclick=()=>{spSel=+r.dataset.s;setTool('spawn')});
 const sl=$('sl'),sv=$('sv'),pp=$('pp');
 function setSpeedFromSlider(){const v=+sl.value;speed=v==0?0:.25*Math.pow(240,(v-1)/99);paused=v==0;lblSpeed()}
@@ -219,7 +235,7 @@ cv.addEventListener('pointercancel',e=>ptrs.delete(e.pointerId));
 cv.addEventListener('wheel',e=>{e.preventDefault();tdist=cl01(tdist*Math.exp(e.deltaY*.001),1.5,95)},{passive:false});
 function resize(){ren.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
 // HUD
-const hist=SP.map(()=>[]),HL=120,chc=$('ch').getContext('2d');let lastHist=0,lastDecl=0;
+const hist=SP.map(()=>[]),HL=120,chc=$('ch').getContext('2d');let lastHist=0,lastDecl=0;const seen=[],ext=[],ovp=[];let hov=-1,hS=-1,chMax=5;
 function hud(){const yr=Math.floor(simD/YEAR)+1,dy=Math.floor(simD%YEAR)+1,hr=Math.floor((simD%1)*24);
 const sea_=decl>.2?'☀️ Verano boreal':decl<-.2?'❄️ Invierno boreal':decl>lastDecl?'🌸 Primavera boreal':'🍂 Otoño boreal';lastDecl=decl;
 $('clock').textContent=`Año ${yr} · Día ${dy} · ${String(hr).padStart(2,'0')}:00`;
@@ -227,19 +243,29 @@ let ts=0,cc=0,lv=0,vg=0,rv=0;for(let c=0;c<NC;c++){ts+=T[c];if(cl[c]>.3)cc++;if(
 $('env').innerHTML=`${sea_}<br>🌡 ${(-25+ts/NC*65).toFixed(0)} °C · ☁ ${(cc/NC*100).toFixed(0)}% · 🌿 ${(vg/lv*100).toFixed(0)}% · 💧 ${rv} ríos`;
 SP.forEach((S,i)=>{const l=pop[i];$('n'+i).textContent=l.length;let g=0;for(const a of l)g+=a.g.v;$('g'+i).textContent=l.length?'v×'+(g/l.length).toFixed(2):'—'});
 if(simD-lastHist>=.5){lastHist=simD;SP.forEach((_,i)=>{hist[i].push(pop[i].length);if(hist[i].length>HL)hist[i].shift()})}
-const W=226,H=56;chc.clearRect(0,0,W,H);let mx=5;for(const a of hist)for(const v of a)mx=Math.max(mx,v);
-hist.forEach((a,s)=>{chc.strokeStyle=SP[s].k;chc.beginPath();a.forEach((v,i)=>{const x=i/(HL-1)*W,y=H-2-v/mx*(H-4);i?chc.lineTo(x,y):chc.moveTo(x,y)});chc.stroke()})}
+SP.forEach((S,i)=>{const n=pop[i].length;if(n)seen[i]=1;if(!n&&seen[i]&&!ext[i]){ext[i]=1;say('💀 Extinción: '+S.n)}if(n)ext[i]=0;if(n>Math.max(25,S.q*4)&&!ovp[i]){ovp[i]=1;say('⚠ Superpoblación: '+S.n)}if(n<S.q*2)ovp[i]=0});
+chart()}
+function chart(){const W=226,H=72;chc.clearRect(0,0,W,H);let mx=5;for(const a of hist)for(const v of a)mx=Math.max(mx,v);chMax=mx;
+hist.forEach((a,s)=>{chc.strokeStyle=SP[s].k;chc.lineWidth=s==hS?2.8:1.2;chc.globalAlpha=hS<0||s==hS?1:.35;chc.beginPath();a.forEach((v,i)=>{const x=i/(HL-1)*W,y=H-2-v/mx*(H-4);i?chc.lineTo(x,y):chc.moveTo(x,y)});chc.stroke()});chc.globalAlpha=1;
+if(hov>=0){chc.strokeStyle='rgba(255,255,255,.35)';chc.lineWidth=1;const x=hov/(HL-1)*W;chc.beginPath();chc.moveTo(x,0);chc.lineTo(x,H);chc.stroke()}}
+const chEl=$('ch'),tip=$('tip');
+function chHover(e){const r=chEl.getBoundingClientRect(),n=hist[0].length;if(!n)return;const x=(e.clientX-r.left)/r.width*226,y=(e.clientY-r.top)/r.height*72;hov=cl01(Math.round(x/226*(HL-1)),0,n-1);
+let bd=1e9;hS=0;hist.forEach((a,s)=>{const d=Math.abs(70-a[hov]/chMax*68-y);if(d<bd){bd=d;hS=s}});
+const day=Math.max(1,Math.floor(simD-(n-1-hov)*.5)+1);
+tip.innerHTML='<b>Día '+day+'</b>'+SP.map((S,s)=>`<div style="${s==hS?'font-weight:700;color:#fff':'opacity:.75'}"><span style="color:${S.k}">●</span> ${S.e} ${S.n}: ${hist[s][hov]}</div>`).join('');
+tip.style.display='block';tip.style.left=Math.min(innerWidth-170,e.clientX+14)+'px';tip.style.top=Math.max(8,e.clientY-60)+'px';chart()}
+chEl.onpointermove=chEl.onpointerdown=chHover;chEl.onpointerleave=()=>{hov=hS=-1;tip.style.display='none';chart()};
 // ---------- arranque ----------
 xform();for(let i=0;i<150;i++)tick(.2);simD=0;
 SP.forEach((S,s)=>{let n=0,g=0;while(n<S.q&&g++<4000){const c=R()*NC|0;if(okc(s,c)&&(S.d!='land'||(p[c]>.1||R()<.2))){mk(s,c,null,.8+R()*.4);n++}}});
-for(let c=0;c<NC;c++)paint(c);geo.attributes.color.needsUpdate=true;updTrees();updPuffs();updAgents();
+for(let c=0;c<NC;c++)paint(c);geo.attributes.color.needsUpdate=true;updTrees();updRivers();updPuffs();updAgents();
 setTool('rain');setSpeedFromSlider();$('load').remove();
 let last=performance.now(),vt=0,fr=0;
 function frame(now){requestAnimationFrame(frame);const rd=Math.min((now-last)/1000,.1);last=now;fr++;
 const sd=paused?0:rd*speed/DAYSEC;
 if(sd>0){simD+=sd;xform();const n=Math.min(6,Math.ceil(sd/.04));for(let i=0;i<n;i++)tick(sd/n)}
 else xform();
-vt+=rd;if(vt>.3){vt=0;for(let c=0;c<NC;c++)paint(c);geo.attributes.color.needsUpdate=true;updTrees();updPuffs();hud()}
+vt+=rd;if(vt>.3){vt=0;for(let c=0;c<NC;c++)paint(c);geo.attributes.color.needsUpdate=true;updTrees();updRivers();updPuffs();hud()}
 updAgents();updRain(paused?0:rd);
 for(let i=bolts.length-1;i>=0;i--){const b=bolts[i];b.t-=rd;b.l.material.opacity=Math.max(0,b.t/.3);if(b.t<=0){spin.remove(b.l);b.l.geometry.dispose();bolts.splice(i,1)}}
 flT=Math.max(0,flT-rd);flash.intensity=flT*30;
