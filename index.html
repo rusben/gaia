@@ -75,7 +75,7 @@ for(let i=0;i<NV;i++){const id=vid[i];if(!done[id]){done[id]=1;Hv[id]=fbm(pos.ge
 const sea=Float32Array.from(Hv).sort()[Math.floor(Hv.length*.63)];
 const rad=hv=>hv>0?1+hv*.35:1+hv*.08;
 for(let i=0;i<NV;i++){const id=vid[i],hv=Hv[id]-sea,r=rad(hv);pos.setXYZ(i,pos.getX(i)*r,pos.getY(i)*r,pos.getZ(i)*r)}
-const h=new Float32Array(NC),T=new Float32Array(NC).fill(.5),m=new Float32Array(NC),m2=new Float32Array(NC),w=new Float32Array(NC),w2=new Float32Array(NC),p=new Float32Array(NC),lat=new Float32Array(NC),cr=new Float32Array(NC),isL=new Uint8Array(NC),dn=new Int32Array(NC),wn=new Int32Array(NC);
+let m=new Float32Array(NC),m2=new Float32Array(NC),w=new Float32Array(NC),w2=new Float32Array(NC);const h=new Float32Array(NC),T=new Float32Array(NC).fill(.5),p=new Float32Array(NC),lat=new Float32Array(NC),cr=new Float32Array(NC),isL=new Uint8Array(NC),dn=new Int32Array(NC),wn=new Int32Array(NC);
 let cl=new Float32Array(NC),cl2=new Float32Array(NC);
 const cn=[],cp=[],cq=[],Y=new THREE.Vector3(0,1,0);
 for(let c=0;c<NC;c++){let x=0,y=0,z=0,s=0;for(let j=0;j<3;j++){const i=c*3+j;x+=pos.getX(i)/3;y+=pos.getY(i)/3;z+=pos.getZ(i)/3;s+=(Hv[vid[i]]-sea)/3}
